@@ -1,0 +1,9 @@
+- name: Update all packages
+  dnf:
+    name: "*"
+    state: latest
+  register: dnf_update
+
+- name: Show update summary
+  debug:
+    msg: "Update complete."

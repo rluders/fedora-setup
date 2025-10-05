@@ -1,0 +1,9 @@
+- name: Install base utilities
+  dnf:
+    name:
+      - dnf-plugins-core
+      - flatpak
+      - git
+      - curl
+      - wget
+    state: present

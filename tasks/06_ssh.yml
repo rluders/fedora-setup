@@ -1,0 +1,43 @@
+- name: Restore SSH keys
+  when: ssh_restore
+  block:
+    - name: Create .ssh directory
+      become: false
+      file:
+        path: "{{ ssh_dest_dir }}"
+        state: directory
+        mode: "0700"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+
+    - name: Copy private key
+      become: false
+      copy:
+        src: "{{ ssh_source_dir }}/{{ ssh_private_key }}"
+        dest: "{{ ssh_dest_dir }}/{{ ssh_private_key }}"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0600"
+      when: ssh_private_key is defined
+      ignore_errors: yes
+
+    - name: Copy public key
+      become: false
+      copy:
+        src: "{{ ssh_source_dir }}/{{ ssh_public_key }}"
+        dest: "{{ ssh_dest_dir }}/{{ ssh_public_key }}"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+      when: ssh_public_key is defined
+      ignore_errors: yes
+
+    - name: Copy authorized_keys (if it exists)
+      become: false
+      copy:
+        src: "{{ ssh_source_dir }}/{{ ssh_authorized_keys_file }}"
+        dest: "{{ ssh_dest_dir }}/authorized_keys"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+      ignore_errors: yes

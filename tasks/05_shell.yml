@@ -1,0 +1,125 @@
+- name: Ensure zsh is installed
+  dnf:
+    name: zsh
+    state: present
+
+- name: Discover target user home
+  become: false
+  set_fact:
+    user_home_fact: "{{ target_home }}"
+
+- name: Install Oh My Zsh (non-interactive mode)
+  become: false
+  args:
+    chdir: "{{ user_home_fact }}"
+  shell: |
+    export RUNZSH=no
+    export CHSH=no
+    if [ ! -d "{{ user_home_fact }}/.oh-my-zsh" ]; then
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    fi
+
+- name: Clone Spaceship theme
+  become: false
+  git:
+    repo: https://github.com/spaceship-prompt/spaceship-prompt.git
+    dest: "{{ user_home_fact }}/.oh-my-zsh/custom/themes/spaceship-prompt"
+    depth: 1
+    version: master
+
+- name: Link Spaceship theme
+  become: false
+  file:
+    src: "{{ user_home_fact }}/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme"
+    dest: "{{ user_home_fact }}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
+    state: link
+    force: yes
+
+- name: Create .zshrc if it does not exist
+  become: false
+  copy:
+    dest: "{{ user_home_fact }}/.zshrc"
+    force: no
+    content: |
+      export ZSH="$HOME/.oh-my-zsh"
+      ZSH_THEME="{{ zsh_theme }}"
+      plugins=({{ zsh_plugins | join(' ') }})
+      source $ZSH/oh-my-zsh.sh
+
+- name: Adjust theme and plugins in .zshrc (idempotent)
+  become: false
+  lineinfile:
+    path: "{{ user_home_fact }}/.zshrc"
+    regexp: "^ZSH_THEME="
+    line: 'ZSH_THEME="{{ zsh_theme }}"'
+
+- name: Adjust plugins in .zshrc (idempotent)
+  become: false
+  lineinfile:
+    path: "{{ user_home_fact }}/.zshrc"
+    regexp: "^plugins="
+    line: "plugins=({{ zsh_plugins | join(' ') }})"
+
+- name: Make zsh the default shell for the user
+  user:
+    name: "{{ target_user }}"
+    shell: /bin/zsh
+
+# Custom aliases file (loaded last in OMZ)
+- name: Oh My Zsh aliases file (custom)
+  become: false
+  blockinfile:
+    path: "{{ user_home_fact }}/.oh-my-zsh/custom/aliases.zsh"
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED ALIASES"
+    block: |
+      # --- custom aliases (managed by Ansible) ---
+      {{ zsh_extra_aliases | join('\n') }}
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: "0644"
+
+# Extra functions (separated from aliases)
+- name: Oh My Zsh functions file (custom)
+  become: false
+  blockinfile:
+    path: "{{ user_home_fact }}/.oh-my-zsh/custom/functions.zsh"
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED FUNCTIONS"
+    block: |
+      {{ zsh_extra_functions }}
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: "0644"
+
+# Completions (k and h)
+- name: Enable kubectl autocompletion (includes k alias)
+  become: false
+  blockinfile:
+    path: "{{ user_home_fact }}/.zshrc"
+    marker: "# {mark} ANSIBLE KUBECTL COMPLETION"
+    block: |
+      if command -v kubectl >/dev/null 2>&1; then
+        source <(kubectl completion zsh)
+        compdef __start_kubectl k
+      fi
+
+- name: Enable helm autocompletion (includes h alias)
+  become: false
+  blockinfile:
+    path: "{{ user_home_fact }}/.zshrc"
+    marker: "# {mark} ANSIBLE HELM COMPLETION"
+    block: |
+      if command -v helm >/dev/null 2>&1; then
+        source <(helm completion zsh)
+        compdef __start_helm h 2>/dev/null || true
+      fi
+
+# Extra block of useful options in .zshrc
+- name: Extra Zsh options (.zshrc custom)
+  become: false
+  blockinfile:
+    path: "{{ user_home_fact }}/.zshrc"
+    marker: "# {mark} ANSIBLE ZSH OPTIONS"
+    block: |
+      {{ zsh_custom_rc_block }}

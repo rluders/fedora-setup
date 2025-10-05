@@ -1,0 +1,13 @@
+# SSH keys
+files/ssh/*
+!files/ssh/.gitkeep
+
+# Secrets
+secrets/*
+!secrets/.gitkeep
+
+# Editor / system junk
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

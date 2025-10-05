@@ -1,0 +1,39 @@
+# DNF tuning
+- name: Optimize DNF (parallel downloads + fastestmirror)
+  ini_file:
+    path: /etc/dnf/dnf.conf
+    section: main
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    no_extra_spaces: true
+  loop:
+    - { option: max_parallel_downloads, value: "10" }
+    - { option: fastestmirror, value: "True" }
+    - { option: defaultyes, value: "True" }
+
+# Multimedia codecs (via RPM Fusion)
+- name: Essential multimedia codecs
+  dnf:
+    name:
+      - ffmpeg
+      - gstreamer1-plugins-good
+      - gstreamer1-plugins-bad-free
+      - gstreamer1-plugins-bad-freeworld
+      - gstreamer1-plugins-ugly
+      - gstreamer1-libav
+    state: present
+  ignore_errors: yes
+
+# Note about Nerd Fonts Symbols
+- name: Nerd Fonts Symbols Note
+  debug:
+    msg: "If you want Symbols Nerd Font specifically (for icons in prompts), I can add a step to download it from the official release. For now, Fira Code + JetBrains Mono are already installed via DNF."
+
+# Final tips
+- name: Steam Note
+  debug:
+    msg: "When opening Steam (Flatpak) for the first time, accept the installation of the complementary runtime."
+
+- name: "Suggestion: start Solaar at session startup (message)"
+  debug:
+    msg: "To start Solaar in the user session, run: solaar -w hide & (or use the Flatpak version)."

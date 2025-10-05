@@ -1,0 +1,11 @@
+- name: Ensure Flatpak is configured
+  package:
+    name: flatpak
+    state: present
+
+- name: Install apps via Flatpak (Flathub)
+  community.general.flatpak:
+    name: "{{ item }}"
+    state: present
+    remote: flathub
+  loop: "{{ flatpaks }}"

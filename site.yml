@@ -1,0 +1,19 @@
+- name: Fedora Workstation Setup
+  hosts: local
+  become: true
+  vars_files:
+    - group_vars/all.yml
+
+  pre_tasks:
+    - name: Ensure we have system facts
+      setup:
+
+  tasks:
+    - import_tasks: tasks/00_prereqs.yml
+    - import_tasks: tasks/01_repos.yml
+    - import_tasks: tasks/02_update.yml
+    - import_tasks: tasks/03_packages_rpm.yml
+    - import_tasks: tasks/04_flatpaks.yml
+    - import_tasks: tasks/05_shell.yml
+    - import_tasks: tasks/06_ssh.yml
+    - import_tasks: tasks/90_post_install.yml

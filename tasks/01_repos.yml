@@ -1,0 +1,42 @@
+- name: Enable RPM Fusion (free/nonfree)
+  when: enable_rpmfusion
+  block:
+    - name: Install RPM Fusion Free
+      dnf:
+        name: "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ fedora_major }}.noarch.rpm"
+        state: present
+    - name: Install RPM Fusion Nonfree
+      dnf:
+        name: "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ fedora_major }}.noarch.rpm"
+        state: present
+
+- name: Import Microsoft GPG for VS Code
+  rpm_key:
+    state: present
+    key: https://packages.microsoft.com/keys/microsoft.asc
+
+- name: VS Code (Microsoft) repository
+  yum_repository:
+    name: code
+    description: Visual Studio Code
+    baseurl: https://packages.microsoft.com/yumrepos/vscode
+    enabled: yes
+    gpgcheck: yes
+    gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+
+- name: Add Google Chrome repository
+  yum_repository:
+    name: google-chrome
+    description: Google Chrome
+    baseurl: http://dl.google.com/linux/chrome/rpm/stable/x86_64
+    enabled: yes
+    gpgcheck: yes
+    gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+
+- name: Enable Flathub
+  when: enable_flathub
+  community.general.flatpak_remote:
+    name: flathub
+    state: present
+    flatpakrepo_url: https://flathub.org/repo/flathub.flatpakrepo
+    enabled: true
